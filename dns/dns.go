@@ -177,6 +177,24 @@ func (d *DnsServer) ParseQuery(ctx context.Context, m *dns.Msg) {
 				}
 				m.Answer = append(m.Answer, rr)
 			}
+		case dns.TypeSVCB:
+			for _, v := range records.SVCB {
+				rr, err := dns.NewRR(fmt.Sprintf("%s SVCB %s", q.Name, v))
+				if err != nil {
+					log.Printf("error generating SVCB record: %v", err)
+					continue
+				}
+				m.Answer = append(m.Answer, rr)
+			}
+		case dns.TypeHTTPS:
+			for _, v := range records.HTTPS {
+				rr, err := dns.NewRR(fmt.Sprintf("%s HTTPS %s", q.Name, v))
+				if err != nil {
+					log.Printf("error generating HTTPS record: %v", err)
+					continue
+				}
+				m.Answer = append(m.Answer, rr)
+			}
 		}
 	}
 }
@@ -187,15 +205,18 @@ func (d *DnsServer) getRecords(ctx context.Context, address string, queryType do
 
 	record, err := d.db.GetRecord(address, queryType)
 	if errors.Is(err, database.ErrNotFound) {
-		resp := d.dohClient.QueryAuthority(ctx, address, queryType)
-		if len(resp) == 0 {
-			return record, fmt.Errorf("no response found")
+		resp, queryErr := d.dohClient.QueryAuthority(ctx, address, queryType)
+		// If query fails, return error without caching
+		if queryErr != nil {
+			return record, fmt.Errorf("error querying authority: %w", queryErr)
 		}
 
+		// Even if resp is empty, this is a valid DNS response (NOERROR with no answers)
+		// Cache it so we don't repeatedly query for the same missing record
 		now := time.Now().UTC()
-		record, err := d.db.AddRecord(now, address, queryType, resp)
-		if err != nil {
-			return record, fmt.Errorf("error adding record: %w", err)
+		record, addErr := d.db.AddRecord(now, address, queryType, resp)
+		if addErr != nil {
+			return record, fmt.Errorf("error adding record: %w", addErr)
 		}
 
 		return record, nil

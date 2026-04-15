@@ -94,10 +94,20 @@ func hasQueryType(r *models.Record, queryType dns.Type) bool {
 		return len(r.NS) > 0
 	case dns.TypeMX:
 		return len(r.MX) > 0
+	case dns.TypeTXT:
+		return len(r.TXT) > 0
+	case dns.TypeSOA:
+		return r.SOA != ""
+	case dns.TypePTR:
+		return len(r.PTR) > 0
 	case models.TypeSRV:
 		return len(r.SRV) > 0
 	case models.TypeKX:
 		return len(r.KX) > 0
+	case models.TypeSVCB:
+		return len(r.SVCB) > 0
+	case models.TypeHTTPS:
+		return len(r.HTTPS) > 0
 	case dns.TypeCNAME:
 		return r.CNAME != ""
 	default:
@@ -123,10 +133,22 @@ func (db *Database) AddRecord(now time.Time, address string, queryType dns.Type,
 		record.NS = recordValue
 	case dns.TypeMX:
 		record.MX = recordValue
+	case dns.TypeTXT:
+		record.TXT = recordValue
+	case dns.TypeSOA:
+		if len(recordValue) == 1 {
+			record.SOA = recordValue[0]
+		}
+	case dns.TypePTR:
+		record.PTR = recordValue
 	case models.TypeSRV:
 		record.SRV = recordValue
 	case models.TypeKX:
 		record.KX = recordValue
+	case models.TypeSVCB:
+		record.SVCB = recordValue
+	case models.TypeHTTPS:
+		record.HTTPS = recordValue
 	case dns.TypeCNAME:
 		if len(recordValue) == 1 {
 			record.CNAME = recordValue[0]

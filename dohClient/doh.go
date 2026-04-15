@@ -20,17 +20,17 @@ func Start(provider ...int) *DohClient {
 }
 
 // QueryAuthority makes DNS over HTTPS request
-func (d *DohClient) QueryAuthority(ctx context.Context, address string, questionQueryType dohDns.Type) []string {
+func (d *DohClient) QueryAuthority(ctx context.Context, address string, questionQueryType dohDns.Type) ([]string, error) {
 	dohResp, err := d.Doh.Query(ctx, dohDns.Domain(address), questionQueryType)
 	if err != nil {
 		// retry failed lookup
 		dohResp, err = d.Doh.Query(ctx, dohDns.Domain(address), questionQueryType)
 		if err != nil {
-			return []string{}
+			return []string{}, err
 		}
 	}
 	if dohResp == nil {
-		return []string{}
+		return []string{}, nil
 	}
 
 	queryResp := []string{}
@@ -49,5 +49,5 @@ func (d *DohClient) QueryAuthority(ctx context.Context, address string, question
 		queryResp = append(queryResp, answer.Data)
 	}
 
-	return queryResp
+	return queryResp, nil
 }
