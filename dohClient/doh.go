@@ -2,7 +2,7 @@ package dohClient
 
 import (
 	"context"
-	"dumbdns/models"
+	"dns-adblock/models"
 	"log"
 
 	"github.com/likexian/doh-go"

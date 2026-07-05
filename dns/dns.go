@@ -2,7 +2,7 @@ package dnsClient
 
 import (
 	"context"
-	"dumbdns/models"
+	"dns-adblock/models"
 	"errors"
 	"fmt"
 	"log"
@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"dumbdns/database"
-	"dumbdns/dohClient"
+	"dns-adblock/database"
+	"dns-adblock/dohClient"
 
 	dohDns "github.com/likexian/doh-go/dns"
 	"github.com/miekg/dns"
@@ -34,7 +34,7 @@ func Start(port string, dohClient *dohClient.DohClient, db *database.Database) (
 	dns.HandleFunc(".", d.handleDnsRequest)
 	d.DnsServer = &dns.Server{Addr: port, Net: "udp"}
 
-	log.Printf("Starting DumbDNS (with AdBlock) at %s\n", d.DnsServer.Addr)
+	log.Printf("Starting DNS-AdBlock at %s\n", d.DnsServer.Addr)
 	err := d.DnsServer.ListenAndServe()
 	if err != nil {
 		return nil, fmt.Errorf("error starting service: %w", err)

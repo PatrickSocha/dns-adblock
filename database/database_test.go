@@ -1,7 +1,7 @@
 package database
 
 import (
-	"dumbdns/models"
+	"dns-adblock/models"
 	"fmt"
 	"reflect"
 	"sync"

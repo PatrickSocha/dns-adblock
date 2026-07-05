@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"dumbdns/models"
+	"dns-adblock/models"
 
 	"github.com/likexian/doh-go/dns"
 )

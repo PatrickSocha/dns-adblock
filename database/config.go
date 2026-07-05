@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"dumbdns/models"
+	"dns-adblock/models"
 )
 
 func readConfigFromDisk() (*models.Config, error) {
-	configFile := "dumbdns.json"
+	configFile := "dns-adblock.json"
 	file, err := os.Open("./" + configFile)
 	if err != nil {
 		exePath, err := os.Executable()

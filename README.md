@@ -1,4 +1,4 @@
-# DumbDNS (With AdBlock)
+# DNS Adblock
 
 DumbDNS is a stupid simple DNS proxy with Ad Blocking written in [Go](https://go.dev/). It compiles to a single Go binary and is exceptionally easy to run. It's not designed to be feature rich or complete.
 

@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"dumbdns/database"
-	dnsServer "dumbdns/dns"
-	"dumbdns/dohClient"
+	"dns-adblock/database"
+	dnsServer "dns-adblock/dns"
+	"dns-adblock/dohClient"
 
 	dohGo "github.com/likexian/doh-go"
 )
