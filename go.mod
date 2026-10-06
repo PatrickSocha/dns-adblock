@@ -1,8 +1,6 @@
 module dns-adblock
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.27.1
 
 require (
 	github.com/likexian/doh-go v0.6.5
