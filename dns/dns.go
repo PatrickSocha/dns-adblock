@@ -64,7 +64,7 @@ func (d *DnsServer) handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	err := w.WriteMsg(m)
 	if err != nil {
-		fmt.Errorf("error writing response message: %w", err)
+		log.Printf("error writing response message: %v", err)
 	}
 }
 
