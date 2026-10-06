@@ -262,3 +262,35 @@ func Test_hasQueryType(t *testing.T) {
 		})
 	}
 }
+
+func Test_isBlocked(t *testing.T) {
+	db := &Database{
+		blockMux:          &sync.RWMutex{},
+		blockListDatabase: map[string]interface{}{"ads.com": struct{}{}},
+		wildcardBlockList: map[string]interface{}{"tracker.com": struct{}{}},
+		Config: &models.Config{
+			WhitelistDomains: map[string]interface{}{"ok.tracker.com": struct{}{}},
+		},
+	}
+
+	tests := []struct {
+		address  string
+		expected bool
+	}{
+		{"ads.com", true},
+		{"sub.ads.com", false},
+		{"tracker.com", true},
+		{"a.tracker.com", true},
+		{"a.b.tracker.com", true},
+		{"ok.tracker.com", false},
+		{"com", false},
+		{"nottracker.com", false},
+		{"google.com", false},
+		{"localhost", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.address, func(t *testing.T) {
+			assert.Equal(t, tt.expected, db.isBlocked(tt.address))
+		})
+	}
+}

@@ -9,6 +9,7 @@ DumbDNS currently comes with the following features:
 - Ad blocking
 - Cached lookups (5 min TTL)
 - Block list refreshing (every 2 hours)
+- Wildcard block list entries (`*.example.com`)
 - White list (bypass any blocked domain)
 - Fetches DNS over HTTPS, serves as DNS*
 - Rejects external IPs
@@ -59,7 +60,7 @@ Start the service in the background
 
 The blocklist has three distinct parts:
 
-- **Block List**: This requires the Go Regex to read the file and return a capture group.
+- **Block List**: This requires the Go Regex to read the file and return a capture group. Wildcard entries such as `*.example.com` are supported and block `example.com` and every subdomain of it.
 - **White List**: These are individual URLs you would like to allow the server to allow and ignore if found in the blocklist.
 - **Hosts File**: This allows you to create a custom mapping of domain to ip. In the given example, archive.is blocks CloudFlare DNS, so we manually add the mapping to make it work.
 

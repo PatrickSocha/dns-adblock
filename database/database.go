@@ -2,6 +2,7 @@ package database
 
 import (
 	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,9 @@ type Database struct {
 	dbMux             *sync.RWMutex
 	blockMux          *sync.RWMutex
 	blockListDatabase map[string]interface{}
+	// wildcardBlockList holds the suffixes of wildcard entries, e.g.
+	// "*.example.com" is stored as "example.com" and blocks it and all subdomains.
+	wildcardBlockList map[string]interface{}
 
 	Config *models.Config
 }
@@ -31,6 +35,7 @@ func Start(ttl time.Duration) *Database {
 		blockMux:          &sync.RWMutex{},
 		database:          map[string]*models.Record{},
 		blockListDatabase: map[string]interface{}{},
+		wildcardBlockList: map[string]interface{}{},
 	}
 
 	return db
@@ -44,10 +49,8 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 		return &models.Record{A: []string{ip}}, nil
 	}
 
-	db.blockMux.RLock()
 	// Check if in block list
-	if _, blocked := db.blockListDatabase[address]; blocked {
-		db.blockMux.RUnlock()
+	if db.isBlocked(address) {
 		return &models.Record{
 			A:     []string{"127.0.0.1"},
 			AAAA:  []string{"::1"},
@@ -57,7 +60,6 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 			CNAME: "localhost",
 		}, nil
 	}
-	db.blockMux.RUnlock()
 
 	// Now we can safely lock the database for record checking
 	db.dbMux.RLock()
@@ -78,6 +80,35 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 	}
 
 	return nil, ErrNotFound
+}
+
+func (db *Database) isBlocked(address string) bool {
+	db.blockMux.RLock()
+	defer db.blockMux.RUnlock()
+
+	if _, blocked := db.blockListDatabase[address]; blocked {
+		return true
+	}
+
+	// Walk up the domain checking for a wildcard match, e.g. "a.example.com"
+	// checks "a.example.com" then "example.com". A wildcard entry blocks the
+	// domain itself as well as its subdomains.
+	for domain := address; ; {
+		if _, blocked := db.wildcardBlockList[domain]; blocked {
+			// Whitelisted domains take priority over wildcard entries
+			if db.Config != nil {
+				if _, ok := db.Config.WhitelistDomains[address]; ok {
+					return false
+				}
+			}
+			return true
+		}
+		i := strings.IndexByte(domain, '.')
+		if i < 0 {
+			return false
+		}
+		domain = domain[i+1:]
+	}
 }
 
 func hasQueryType(r *models.Record, queryType dns.Type) bool {

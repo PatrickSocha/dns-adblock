@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -20,28 +21,36 @@ func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 		log.Println("Getting block list")
 		db.blockMux.Lock()
 		db.blockListDatabase = make(map[string]interface{})
+		db.wildcardBlockList = make(map[string]interface{})
 
 		for _, s := range config.Blocklists {
 			var compRegEx = regexp.MustCompile(s.Regex)
 			resp, err := http.Get(s.Url)
 			if err != nil {
 				log.Println("Error:", err)
+				continue
 			}
 			scanner := bufio.NewScanner(resp.Body)
 
 			// populate the list
 			for scanner.Scan() {
 				v := getParams(compRegEx, scanner.Text())
-				if v != nil {
+				if v == nil {
+					continue
+				}
+				if suffix, ok := strings.CutPrefix(*v, "*."); ok {
+					db.wildcardBlockList[suffix] = struct{}{}
+				} else {
 					db.blockListDatabase[*v] = struct{}{}
 				}
 			}
+			resp.Body.Close()
 		}
 		for domain, _ := range config.WhitelistDomains {
 			delete(db.blockListDatabase, domain)
 		}
 		db.blockMux.Unlock()
-		log.Printf("Block list updated with %d records\r\n", len(db.blockListDatabase))
+		log.Printf("Block list updated with %d records and %d wildcards\r\n", len(db.blockListDatabase), len(db.wildcardBlockList))
 
 		log.Println("Purging old database records")
 		db.dbMux.Lock()
