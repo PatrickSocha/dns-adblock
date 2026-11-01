@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"dns-adblock/models"
+	"dns-adblock/stats"
 
 	"github.com/likexian/doh-go/dns"
 )
@@ -25,7 +26,11 @@ type Database struct {
 	// "*.example.com" is stored as "example.com" and blocks it and all subdomains.
 	wildcardBlockList map[string]interface{}
 
-	Config *models.Config
+	Config     *models.Config
+	configPath string
+
+	// Blocked records blocked lookups for the admin page, if set.
+	Blocked *stats.Blocked
 }
 
 func Start(ttl time.Duration) *Database {
@@ -51,6 +56,9 @@ func (db *Database) GetRecord(address string, queryType dns.Type) (*models.Recor
 
 	// Check if in block list
 	if db.isBlocked(address) {
+		if db.Blocked != nil {
+			db.Blocked.Record(address, time.Now())
+		}
 		return &models.Record{
 			A:     []string{"127.0.0.1"},
 			AAAA:  []string{"::1"},
@@ -86,6 +94,13 @@ func (db *Database) isBlocked(address string) bool {
 	db.blockMux.RLock()
 	defer db.blockMux.RUnlock()
 
+	// Whitelisted domains take priority over all block list entries
+	if db.Config != nil {
+		if _, ok := db.Config.WhitelistDomains[address]; ok {
+			return false
+		}
+	}
+
 	if _, blocked := db.blockListDatabase[address]; blocked {
 		return true
 	}
@@ -95,12 +110,6 @@ func (db *Database) isBlocked(address string) bool {
 	// domain itself as well as its subdomains.
 	for domain := address; ; {
 		if _, blocked := db.wildcardBlockList[domain]; blocked {
-			// Whitelisted domains take priority over wildcard entries
-			if db.Config != nil {
-				if _, ok := db.Config.WhitelistDomains[address]; ok {
-					return false
-				}
-			}
 			return true
 		}
 		i := strings.IndexByte(domain, '.')

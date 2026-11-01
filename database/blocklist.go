@@ -10,12 +10,7 @@ import (
 )
 
 func (db *Database) UpdateBlockList(refreshRate time.Duration) {
-	config, err := readConfigFromDisk()
-	if err != nil {
-		log.Fatalf("error reading config: %v", err)
-		return
-	}
-	db.Config = config
+	config := db.Config
 
 	for {
 		log.Println("Getting block list")
@@ -45,9 +40,6 @@ func (db *Database) UpdateBlockList(refreshRate time.Duration) {
 				}
 			}
 			resp.Body.Close()
-		}
-		for domain, _ := range config.WhitelistDomains {
-			delete(db.blockListDatabase, domain)
 		}
 		db.blockMux.Unlock()
 		log.Printf("Block list updated with %d records and %d wildcards\r\n", len(db.blockListDatabase), len(db.wildcardBlockList))

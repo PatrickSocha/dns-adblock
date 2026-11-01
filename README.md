@@ -11,6 +11,7 @@ DumbDNS currently comes with the following features:
 - Block list refreshing (every 2 hours)
 - Wildcard block list entries (`*.example.com`)
 - White list (bypass any blocked domain)
+- Optional admin page showing recently and most blocked domains, with a whitelist button
 - Fetches DNS over HTTPS, serves as DNS*
 - Rejects external IPs
 - Misses out 99% of the DNS spec (:
@@ -63,11 +64,13 @@ The blocklist has three distinct parts:
 - **Block List**: This requires the Go Regex to read the file and return a capture group. Wildcard entries such as `*.example.com` are supported and block `example.com` and every subdomain of it.
 - **White List**: These are individual URLs you would like to allow the server to allow and ignore if found in the blocklist.
 - **Hosts File**: This allows you to create a custom mapping of domain to ip. In the given example, archive.is blocks CloudFlare DNS, so we manually add the mapping to make it work.
+- **Admin Address** (optional): The address to serve the admin page on, see below.
 
 You should save this as `dumbdns.json` in the same folder as the executable binary.
 
 ```json
 {
+  "adminAddr": "10.0.0.1:8080",
   "blockLists":[
     {
       "regex": "0.0.0.0\\s+(?P<url>\\S+)",
@@ -94,12 +97,20 @@ You should save this as `dumbdns.json` in the same folder as the executable bina
 }
 ```
 
+### Admin page
+
+Set `adminAddr` to serve a basic admin page showing domains blocked in the last hour and the most blocked domains over 30 days. Each recently blocked domain has a whitelist button, which takes effect immediately and is saved to the config file's `whitelist`.
+
+Bind it to a local or VPN address, e.g. your WireGuard server IP, so it isn't reachable from the internet. Requests from non-private IPs are rejected regardless. Leave `adminAddr` out to disable it.
+
+Block stats are held in memory and reset when the service restarts.
+
 ### Project Roadmap
 
 - ~~Config file~~
 - ~~IPv6 support~~
 - ~~DNS over HTTPS (DoH)~~
-- A simple way to add domains to the whitelist
+- ~~A simple way to add domains to the whitelist~~
 - Testing of critical components
 
 ### Who built this & licenses.
